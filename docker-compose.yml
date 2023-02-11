@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  node:
+    container_name: node
+    build:
+      context: .
+      dockerfile: ./docker/node/Dockerfile
+    command: bash -c 'npx ng serve --host 0.0.0.0 --disable-host-check'
+    ports:
+      - "4200:4200"
+    volumes:
+      - ".:/apps"
+    tty: true
+    stdin_open: true
