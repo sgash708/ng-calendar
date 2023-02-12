@@ -1,0 +1,17 @@
+mat-toolbar {
+  background-color: #F7B233;
+  color: #FFFFFF;
+  height: 48px;
+
+  .title {
+    color: white;
+  }
+  .spacer {
+    flex: 1 1 auto;
+  }
+  .icon {
+    background-color: transparent;
+    background-repeat: no-repeat;
+    border: none;
+  }
+}
