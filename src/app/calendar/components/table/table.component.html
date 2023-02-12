@@ -1,5 +1,5 @@
 <div class="container" fxLayout="column">
-  <div class="containerx" fxLayout="row">
+  <div class="container2" fxLayout="row">
     <div class="item item1" fxFlex="40">
       <mat-button-toggle-group #group="matButtonToggleGroup">
         <mat-button-toggle value="left" aria-label="Text align left">
@@ -9,7 +9,7 @@
             [view]="view" [(viewDate)]="viewDate"
             (viewDateChange)="closeOpenMonthViewDay()"
           >
-            Previous
+            前月
           </div>
         </mat-button-toggle>
         <mat-button-toggle value="center" aria-label="Text align center">
@@ -18,7 +18,7 @@
             mwlCalendarToday
             [(viewDate)]="viewDate"
           >
-            Today
+            今月
           </div>
         </mat-button-toggle>
         <mat-button-toggle value="right" aria-label="Text align right">
@@ -29,42 +29,25 @@
             [(viewDate)]="viewDate"
             (viewDateChange)="closeOpenMonthViewDay()"
           >
-            Next
+            来月
           </div>
         </mat-button-toggle>
       </mat-button-toggle-group>
     </div>
     <div class="item item2" fxFlex="20">
-      <strong>{{ viewDate | calendarDate: view + 'ViewTitle':'en' }}</strong>
-    </div>
-    <div class="item item3" fxFlex="40">
-      <mat-button-toggle-group #group="matButtonToggleGroup">
-        <mat-button-toggle value="left" aria-label="Text align left">
-          <div class="btn btn-primary" (click)="setView(CalendarView.Month)" [class.active]="view === CalendarView.Month">
-            Month
-          </div>
-        </mat-button-toggle>
-        <mat-button-toggle value="center" aria-label="Text align center">
-          <div class="btn btn-primary" (click)="setView(CalendarView.Week)" [class.active]="view === CalendarView.Week">
-            Week
-          </div>
-        </mat-button-toggle>
-        <mat-button-toggle value="right" aria-label="Text align right">
-          <div class="btn btn-primary" (click)="setView(CalendarView.Day)" [class.active]="view === CalendarView.Day">
-            Day
-          </div>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
+      <strong>{{ viewDate | calendarDate:(view + 'ViewTitle'):'Ja' }}</strong>
     </div>
   </div>
 
   <div [ngSwitch]="view">
     <mwl-calendar-month-view
       *ngSwitchCase="CalendarView.Month"
+      locale="ja"
       [viewDate]="viewDate"
       [events]="events"
       [refresh]="refresh"
       [activeDayIsOpen]="activeDayIsOpen"
+      [cellTemplate]="customCellTemplate"
       (dayClicked)="dayClicked($event.day)"
       (eventClicked)="handleEvent('Clicked', $event.event)"
       (eventTimesChanged)="eventTimesChanged($event)"
@@ -72,6 +55,7 @@
     </mwl-calendar-month-view>
     <mwl-calendar-week-view
       *ngSwitchCase="CalendarView.Week"
+      locale="ja"
       [viewDate]="viewDate"
       [events]="events"
       [refresh]="refresh"
@@ -81,6 +65,7 @@
     </mwl-calendar-week-view>
     <mwl-calendar-day-view
       *ngSwitchCase="CalendarView.Day"
+      locale="ja"
       [viewDate]="viewDate"
       [events]="events"
       [refresh]="refresh"
@@ -90,15 +75,43 @@
     </mwl-calendar-day-view>
   </div>
 
-  <br /><br /><br />
-
-  <h3>
-    Edit events
-    <button class="btn btn-primary pull-right" (click)="addEvent()">
-      Add new
-    </button>
-    <div class="clearfix"></div>
-  </h3>
+  <ng-template
+    #customCellTemplate
+    let-day="day"
+    let-openDay="openDay"
+    let-locale="locale"
+    let-tooltipPlacement="tooltipPlacement"
+    let-highlightDay="highlightDay"
+    let-unhighlightDay="unhighlightDay"
+    let-eventClicked="eventClicked"
+    let-tooltipTemplate="tooltipTemplate"
+    let-tooltipAppendToBody="tooltipAppendToBody">
+    <div class="cal-cell-top" (dblclick)="doubleClick(day)">
+      <span class="cal-day-badge" *ngIf="day.badgeTotal > 0">{{ day.badgeTotal }}</span>
+      <span class="cal-day-number">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
+    </div>
+    <div class="cal-events" *ngIf="day.events.length > 0" (dblclick)="doubleClick(day)">
+      <div
+        class="cal-event"
+        *ngFor="let event of day.events;"
+        [style.backgroundColor]="event.color?.primary"
+        [ngClass]="event?.cssClass"
+        (mouseenter)="highlightDay.emit({event: event})"
+        (mouseleave)="unhighlightDay.emit({event: event})"
+        [mwlCalendarTooltip]="event.title | calendarEventTitle:'monthTooltip':event"
+        [tooltipPlacement]="tooltipPlacement"
+        [tooltipEvent]="event"
+        [tooltipTemplate]="tooltipTemplate"
+        [tooltipAppendToBody]="tooltipAppendToBody"
+        mwlDraggable
+        [class.cal-draggable]="event.draggable"
+        dragActiveClass="cal-drag-active"
+        [dropData]="{event: event}"
+        [dragAxis]="{x: event.draggable, y: event.draggable}"
+        (mwlClick)="eventClicked.emit({ event: event })">
+      </div>
+    </div>
+  </ng-template>
 
   <ng-template #modalContent let-close="close">
     <div class="modal-header">
@@ -109,10 +122,10 @@
     </div>
     <div class="modal-body">
       <div>
-        Action:<pre>{{ modalData?.action }}</pre>
+        Action:<pre>{{ modalData.action }}</pre>
       </div>
       <div>
-        Event:<pre>{{ modalData?.event | json }}</pre> </div>
+        Event:<pre>{{ modalData.event | json }}</pre> </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-outline-secondary" (click)="close()">

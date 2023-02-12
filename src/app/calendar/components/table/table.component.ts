@@ -12,7 +12,6 @@ import {
   endOfMonth,
   isSameDay,
   isSameMonth,
-  addHours,
 } from 'date-fns';
 import { Subject } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -20,24 +19,11 @@ import {
   CalendarEvent,
   CalendarEventAction,
   CalendarEventTimesChangedEvent,
+  CalendarMonthViewDay,
   CalendarView,
 } from 'angular-calendar';
-import { EventColor } from 'calendar-utils';
+import { ColorsType } from '../../models';
 
-const colors: Record<string, EventColor> = {
-  red: {
-    primary: '#ad2121',
-    secondary: '#FAE3E3',
-  },
-  blue: {
-    primary: '#1e90ff',
-    secondary: '#D1E8FF',
-  },
-  yellow: {
-    primary: '#e3bc08',
-    secondary: '#FDF1BA',
-  },
-};
 @Component({
   selector: 'app-table',
   templateUrl: './table.component.html',
@@ -47,17 +33,16 @@ const colors: Record<string, EventColor> = {
 export class TableComponent {
   @ViewChild('modalContent', { static: true }) modalContent!: TemplateRef<any>;
 
+  refresh = new Subject<void>();
   view: CalendarView = CalendarView.Month;
-
   CalendarView = CalendarView;
-
+  colors = ColorsType;
   viewDate: Date = new Date();
-
+  activeDayIsOpen: boolean = true;
   modalData!: {
     action: string;
     event: CalendarEvent;
   };
-
   actions: CalendarEventAction[] = [
     {
       label: '✏️',
@@ -75,15 +60,12 @@ export class TableComponent {
       },
     },
   ];
-
-  refresh = new Subject<void>();
-
   events: CalendarEvent[] = [
     {
       start: subDays(startOfDay(new Date()), 1),
       end: addDays(new Date(), 1),
-      title: 'A 3 day event',
-      color: { ...colors['red'] },
+      title: '3日連続予定',
+      color: { ...this.colors['red'] },
       actions: this.actions,
       allDay: true,
       resizable: {
@@ -94,44 +76,39 @@ export class TableComponent {
     },
     {
       start: startOfDay(new Date()),
-      title: 'An event with no end date',
-      color: { ...colors['yellow'] },
+      title: '終日予定',
+      color: { ...this.colors['yellow'] },
       actions: this.actions,
+      allDay: true,
+      draggable: true,
     },
     {
       start: subDays(endOfMonth(new Date()), 3),
       end: addDays(endOfMonth(new Date()), 3),
-      title: 'A long event that spans 2 months',
-      color: { ...colors['blue'] },
+      title: '月跨ぎ予定',
+      color: { ...this.colors['blue'] },
       allDay: true,
-    },
-    {
-      start: addHours(startOfDay(new Date()), 2),
-      end: addHours(new Date(), 2),
-      title: 'A draggable and resizable event',
-      color: { ...colors['yellow'] },
-      allDay: true,
+      draggable: true,
     },
   ];
 
-  activeDayIsOpen: boolean = true;
 
   constructor(
     private modal: NgbModal,
   ) {}
 
   dayClicked({ date, events }: { date: Date; events: CalendarEvent[] }): void {
-    if (isSameMonth(date, this.viewDate)) {
-      if (
-        (isSameDay(this.viewDate, date) && this.activeDayIsOpen === true) ||
-        events.length === 0
-      ) {
-        this.activeDayIsOpen = false;
-      } else {
-        this.activeDayIsOpen = true;
-      }
-      this.viewDate = date;
+    if (!isSameMonth(date, this.viewDate)) return;
+
+    if (
+      (isSameDay(this.viewDate, date) && this.activeDayIsOpen === true) ||
+      events.length === 0
+    ) {
+      this.activeDayIsOpen = false;
+    } else {
+      this.activeDayIsOpen = true;
     }
+    this.viewDate = date;
   }
 
   eventTimesChanged({
@@ -164,7 +141,7 @@ export class TableComponent {
         title: 'New event',
         start: startOfDay(new Date()),
         end: endOfDay(new Date()),
-        color: colors['red'],
+        color: this.colors['red'],
         draggable: true,
         resizable: {
           beforeStart: true,
@@ -184,5 +161,9 @@ export class TableComponent {
 
   closeOpenMonthViewDay() {
     this.activeDayIsOpen = false;
+  }
+
+  doubleClick(day: CalendarMonthViewDay) {
+    console.log('Day was double clicked', day);
   }
 }
